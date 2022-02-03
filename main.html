@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Dean DiVincenzo - Vention Developer Test</title>
+		<style>
+			body { margin: 0; }
+		</style>
+	</head>
+	<body>
+		<script src="three.js"></script>
+		<script>
+		//Create scene and camera for Three JS	
+			const scene = new THREE.Scene();
+			const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			
+			// Function that creates cubes
+			function createCube(){
+
+				const geometry = new THREE.BoxGeometry(1,1,1);
+				//Faces of cubes are selected randomonly from this list
+				let colorHex = [0xFF0000,0x00FF00,0x0000FF,0xFFFF00,0x800080,0x000000]; 
+				let colorNames= ['red', 'green', 'blue', 'yellow', 'purple', 'black'];				
+				var cubeMaterials = []
+			
+				for (let cubeFace=0; cubeFace<= 5; cubeFace++){
+
+					let randomColorIndex = Math.floor(Math.random()*colorHex.length) //Create random index dependant on list length
+					cubeMaterials.push(new THREE.MeshBasicMaterial( {color: colorHex[randomColorIndex], side: THREE.DoubleSide, name: colorNames[randomColorIndex]}));
+					
+					//Index 0 will be CubeA's face that will collide with CubeB
+					if (cubeFace==0){
+						var sideColorA= (colorNames[randomColorIndex]);
+					}
+					//Index 1 will be CubeB's face that will collide with CubeA
+					if (cubeFace ==1){
+						var sideColorB = colorNames[randomColorIndex];
+					}
+					colorHex.splice(randomColorIndex,1);
+					colorNames.splice(randomColorIndex,1);
+
+				};
+
+				const material = new THREE.MeshFaceMaterial(cubeMaterials);
+				const cube = new THREE.Mesh( geometry, material );
+
+				//returns the cube as well as colors that will collide
+				return {
+					'cube':cube,
+					'colorA': sideColorA,
+					'colorB': sideColorB
+				};
+			};
+			
+			//function that checks collision cases
+			function checkCollisionCase(sideA, sideB){
+				let colorA = sideA;
+				let colorB = sideB;
+				
+				//Function is called in animate loop, therefore can update object dynamics here directly.
+				//Assumption: CubeB dynamics remain the same if they were unstated in document
+				if (colorA == colorB){ //Both Cubes removed
+					scene.remove(cubeA);
+					scene.remove(cubeB);
+				}
+				else if(colorB == 'black'){ //CubeA removed
+					scene.remove(cubeA);
+					cubeB.position.x -=0.01;		
+				}
+				else if (colorB =='red'){ //CubeA stops
+					cubeA.position.x +=0;
+					cubeB.position.x -=0.01;
+				}
+				else if (colorB =='green'){	//CubeA 2 times speed
+					cubeA.position.x +=0.02;
+					cubeB.position.x -=0.01;
+				}
+				else if (colorB=='blue'){ // CubeA reverses direction
+					cubeA.position.x -=0.01;
+					cubeB.position.x -=0.01;
+				}
+				else if (colorB =='yellow'){ //CubeA speed reduces by 0.5
+					cubeA.position.x +=0.005;
+					cubeB.position.x -=0.01;
+				}
+				else if (colorB=='purple'){ //CubeA given random trajectory in 3 Directions
+					cubeB.position.x -=0.01;
+					cubeA.position.x +=Math.random()*0.01;
+					cubeA.position.y +=Math.random()*0.01;
+					cubeA.position.z +=Math.random()*0.01;
+
+				}
+
+			};
+			//Creating Cubes A and B, as well as getting properties
+			let propertiesCubeA = createCube();
+			let cubeA = propertiesCubeA.cube;
+			let cubeSideA = propertiesCubeA.colorA;
+		
+			let propertiesCubeB = createCube();
+			let cubeB = propertiesCubeB.cube;
+			let cubeSideB = propertiesCubeB.colorB;
+			
+			//Add cubes to scene and position them collinear to eachother
+			scene.add(cubeA);
+			scene.add(cubeB);
+
+			cubeA.position.set(-3,0,0);
+			cubeB.position.set(3,0,0);
+
+			
+			const renderer = new THREE.WebGLRenderer();
+			renderer.setSize( window.innerWidth, window.innerHeight );								
+			document.body.appendChild( renderer.domElement );
+			camera.position.z = 8;
+			
+			function animate() {
+				requestAnimationFrame( animate );	
+
+				//Pre-collison dynamics
+				if (cubeA.position.x +0.5 <= cubeB.position.x-0.5){
+					cubeA.position.x += 0.01;
+					cubeB.position.x -=0.01;
+				}
+				//Update dynamics post collision
+				else{
+					checkCollisionCase(cubeSideA,cubeSideB);
+				};
+							
+				renderer.render( scene, camera );
+			};
+
+			animate();
+		</script>
+	</body>
+</html>
